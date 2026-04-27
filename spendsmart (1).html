@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="SpendSmart"/>
+<meta name="theme-color" content="#08080D"/>
+<title>SpendSmart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#08080D;--s2:#161621;--s3:#1C1C2B;--s4:#222234;
+  --chase:#2E8BF0;--chase-dim:rgba(46,139,240,0.11);--chase-border:rgba(46,139,240,0.22);
+  --disc:#FF6B35;--disc-dim:rgba(255,107,53,0.11);--disc-border:rgba(255,107,53,0.22);
+  --accent:#7C6FFF;--accent-dim:rgba(124,111,255,0.11);--accent-border:rgba(124,111,255,0.22);
+  --green:#3DD68C;--green-dim:rgba(61,214,140,0.11);
+  --red:#FF5C5C;--amber:#F59E0B;
+  --t1:#EEEDF8;--t2:#8F8EB0;--t3:#4E4D6A;--t4:#2A293E;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --r8:8px;--r12:12px;--r16:16px;--r20:20px;
+  --font:'Sora',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body{max-width:430px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(8,8,13,0.9);display:flex;align-items:flex-end;z-index:100}
+.modal-overlay.hidden{display:none}
+.modal-sheet{background:var(--s2);border-radius:var(--r20) var(--r20) 0 0;border:0.5px solid var(--border2);border-bottom:none;width:100%;padding-bottom:max(32px,env(safe-area-inset-bottom));animation:slideUp .28s cubic-bezier(.16,1,.3,1);max-height:90vh;overflow-y:auto}
+@keyframes slideUp{from{transform:translateY(50px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-handle{width:32px;height:3px;background:var(--t4);border-radius:2px;margin:12px auto 0}
+.modal-body{padding:22px 24px 0}
+.modal-icon{margin-bottom:14px}
+.modal-title{font-size:19px;font-weight:600;letter-spacing:-0.3px;margin-bottom:5px}
+.modal-desc{font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:20px}
+.modal-desc strong{color:var(--t1);font-weight:500}
+.day-rows{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto}
+.day-row{background:var(--s3);border:0.5px solid var(--border);border-radius:var(--r12);padding:12px 14px;display:flex;align-items:center;gap:12px}
+.dr-label{flex:1}
+.dr-date{font-size:13px;font-weight:500}
+.dr-hint{font-size:11px;color:var(--t3);margin-top:1px}
+.dr-input-wrap{display:flex;align-items:center;gap:5px;background:var(--s4);border:0.5px solid var(--border2);border-radius:var(--r8);padding:7px 10px}
+.dr-sym{font-size:13px;color:var(--t3)}
+.dr-inp{background:none;border:none;outline:none;color:var(--t1);font-family:var(--mono);font-size:14px;font-weight:500;width:84px;text-align:right}
+.dr-inp::placeholder{color:var(--t4)}
+.modal-btns{display:flex;gap:8px;margin-top:20px}
+.mbtn{flex:1;padding:14px;border-radius:var(--r12);border:none;font-family:var(--font);font-size:14px;font-weight:500;cursor:pointer;transition:opacity .15s}
+.mbtn:active{opacity:.8}
+.mbtn.primary-chase{background:var(--chase);color:#fff}
+.mbtn.ghost{background:var(--s3);border:0.5px solid var(--border2);color:var(--t2);flex:0 0 auto;padding:14px 20px}
+
+.hdr{padding:56px 20px 0;display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:18px;font-weight:600;letter-spacing:-0.4px}
+.logo em{font-style:normal;color:var(--accent)}
+.icon-btn{width:38px;height:38px;border-radius:var(--r12);background:var(--s2);border:0.5px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.ndot{width:7px;height:7px;background:var(--green);border-radius:50%;position:absolute;top:6px;right:6px;border:1.5px solid var(--bg)}
+.dateline{padding:8px 20px 0;font-size:11px;color:var(--t3);font-family:var(--mono);letter-spacing:.04em}
+
+.install-bar{margin:10px 20px 0;background:var(--accent-dim);border:0.5px solid var(--accent-border);border-radius:var(--r12);padding:11px 14px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.ib-text{flex:1}.ib-title{font-size:13px;font-weight:500}.ib-sub{font-size:11px;color:var(--t2);margin-top:1px}
+.ib-x{font-size:16px;color:var(--t3);padding:4px;cursor:pointer}
+
+.cards-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 20px 0}
+.bal-card{border-radius:var(--r16);padding:17px 15px;border:0.5px solid;cursor:pointer;position:relative;overflow:hidden;transition:border-color .2s;-webkit-user-select:none;user-select:none}
+.bal-card.chase{background:var(--chase-dim);border-color:var(--chase-border)}
+.bal-card.disc{background:var(--disc-dim);border-color:var(--disc-border);cursor:default}
+.bal-card.stale{border-style:dashed}
+.bc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.bc-brand{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.bc-brand.chase{color:var(--chase)}.bc-brand.disc{color:var(--disc)}
+.bc-pill{font-size:10px;padding:2px 8px;border-radius:999px;font-weight:500}
+.bc-pill.ok{background:var(--green-dim);color:var(--green)}
+.bc-pill.warn{background:rgba(245,158,11,0.14);color:var(--amber)}
+.bc-pill.bad{background:rgba(255,92,92,0.12);color:var(--red)}
+.bc-sub{font-size:10px;color:var(--t3);margin-bottom:3px;letter-spacing:.02em}
+.bc-val{font-size:22px;font-weight:300;font-family:var(--mono);letter-spacing:-0.5px;line-height:1.1}
+.bc-val.empty{font-size:12px;color:var(--t3);font-family:var(--font);font-weight:400;margin-top:3px;line-height:1.5}
+.bc-foot{font-size:10px;color:var(--t3);margin-top:7px}
+
+.net-section{margin:10px 20px 0;background:var(--s2);border:0.5px solid var(--border);border-radius:var(--r16);padding:18px}
+.net-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.net-title{font-size:11px;font-weight:600;color:var(--t3);letter-spacing:.08em;text-transform:uppercase}
+.net-big{font-size:32px;font-weight:300;font-family:var(--mono);letter-spacing:-1px;line-height:1}
+.net-big.positive{color:var(--green)}.net-big.negative{color:var(--red)}.net-big.neutral{color:var(--t2)}
+.net-row{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border)}
+.net-item{display:flex;flex-direction:column;gap:3px}
+.net-item-label{font-size:10px;color:var(--t3);letter-spacing:.04em;text-transform:uppercase}
+.net-item-val{font-size:14px;font-weight:500;font-family:var(--mono)}
+.net-arrow{color:var(--t4);font-size:18px}
+.net-bar-wrap{margin-top:12px}
+.net-bar-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:5px}
+.net-bar-track{height:4px;background:var(--s3);border-radius:2px;overflow:hidden}
+.net-bar-fill{height:100%;border-radius:2px;transition:width .5s ease;background:var(--green)}
+.net-bar-fill.warning{background:var(--amber)}.net-bar-fill.danger{background:var(--red)}
+
+.prog-wrap{padding:12px 20px 0}
+.prog-row{display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-bottom:7px}
+.prog-track{height:4px;background:var(--s3);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;border-radius:2px;transition:width .5s ease}
+
+.tabs{display:flex;margin:14px 20px 0;background:var(--s2);border-radius:var(--r12);padding:3px;gap:2px;border:0.5px solid var(--border)}
+.tab{flex:1;text-align:center;padding:9px 4px;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;color:var(--t3);transition:all .18s;border:none;background:transparent;letter-spacing:.01em;-webkit-user-select:none;user-select:none}
+.tab.active{background:var(--s4);color:var(--t1);border:0.5px solid var(--border2)}
+
+.panel{display:none}.panel.active{display:block}
+.sec{padding:14px 20px}
+.sec-lbl{font-size:10px;font-weight:600;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:11px}
+
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.stat-card{background:var(--s2);border:0.5px solid var(--border);border-radius:var(--r12);padding:13px}
+.stat-lbl{font-size:10px;color:var(--t3);letter-spacing:.04em;text-transform:uppercase;margin-bottom:5px}
+.stat-val{font-size:19px;font-weight:500;font-family:var(--mono)}
+.stat-sub{font-size:11px;color:var(--t3);margin-top:3px}
+
+.mnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.mnav-btn{background:var(--s2);border:0.5px solid var(--border);border-radius:var(--r8);padding:7px 14px;color:var(--t2);font-size:14px;cursor:pointer;font-family:var(--font)}
+.mnav-lbl{font-size:14px;font-weight:500}
+
+.cc{background:var(--s2);border:0.5px solid var(--border);border-radius:var(--r16);padding:15px;margin-bottom:10px}
+.cc-lbl{font-size:10px;color:var(--t3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:11px}
+.cat-leg{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:11px}
+.cat-pill-leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t2)}
+.cat-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+.txn-list{display:flex;flex-direction:column;gap:6px}
+.txn{background:var(--s2);border:0.5px solid var(--border);border-radius:var(--r12);padding:12px 13px;display:flex;align-items:center;gap:10px}
+.txn-ico{width:35px;height:35px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.txn-body{flex:1;min-width:0}
+.txn-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.txn-meta{font-size:11px;color:var(--t3);margin-top:2px;display:flex;align-items:center;gap:5px}
+.chip{font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px}
+.chip.disc{background:var(--disc-dim);color:var(--disc)}
+.txn-r{text-align:right;flex-shrink:0}
+.txn-amt{font-size:13px;font-weight:500;font-family:var(--mono);color:var(--red)}
+.txn-del{font-size:10px;color:var(--t4);cursor:pointer;margin-top:3px}
+.txn-del:active{color:var(--red)}
+
+.add-btn{width:100%;padding:13px;border-radius:var(--r12);background:var(--disc);border:none;color:#fff;font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;margin-bottom:12px}
+.add-btn:active{opacity:.85}
+.add-form{background:var(--s2);border:0.5px solid var(--border);border-radius:var(--r16);padding:15px;margin-bottom:12px;display:none}
+.add-form.open{display:block}
+.f-row{margin-bottom:10px}
+.f-lbl{display:block;font-size:10px;color:var(--t3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em}
+.f-in,.f-sel{width:100%;background:var(--s3);border:0.5px solid var(--border);border-radius:var(--r8);padding:10px 11px;color:var(--t1);font-family:var(--font);font-size:13px;outline:none;transition:border-color .15s;-webkit-appearance:none;appearance:none}
+.f-in:focus,.f-sel:focus{border-color:var(--disc)}
+.f-sel option{background:var(--s3)}
+.f-acts{display:flex;gap:8px;margin-top:12px}
+.f-save{flex:1;padding:11px;border-radius:var(--r8);background:var(--disc);border:none;color:#fff;font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer}
+.f-cancel{padding:11px 14px;border-radius:var(--r8);background:var(--s3);border:0.5px solid var(--border);color:var(--t2);font-family:var(--font);font-size:13px;cursor:pointer}
+
+.insight{background:var(--s2);border:0.5px solid var(--border);border-radius:var(--r12);padding:13px;margin-bottom:8px;display:flex;gap:11px;align-items:flex-start}
+.ins-dot-wrap{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ins-body{font-size:13px;color:var(--t2);line-height:1.6}
+.ins-body strong{color:var(--t1);font-weight:500}
+
+.srow{background:var(--s2);border:0.5px solid var(--border);border-radius:var(--r12);padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.sr-body{flex:1}
+.sr-title{font-size:13px;font-weight:500}
+.sr-sub{font-size:11px;color:var(--t3);margin-top:2px}
+.toggle{width:44px;height:26px;background:var(--s4);border-radius:13px;position:relative;cursor:pointer;transition:background .22s;border:0.5px solid var(--border);flex-shrink:0}
+.toggle.on{background:var(--green);border-color:transparent}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .22s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.toggle.on::after{transform:translateX(18px)}
+.bud-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+.bud-in{background:var(--s3);border:0.5px solid var(--border);border-radius:var(--r8);padding:9px 11px;color:var(--t1);font-family:var(--mono);font-size:15px;width:120px;outline:none}
+.bud-save{padding:9px 14px;border-radius:var(--r8);background:var(--accent);border:none;color:#fff;font-family:var(--font);font-size:13px;cursor:pointer}
+.bud-sym{font-size:16px;color:var(--t3)}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="modal-overlay hidden" id="modalOverlay">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-body">
+        <div class="modal-icon" id="mIcon"></div>
+        <div class="modal-title" id="mTitle"></div>
+        <div class="modal-desc" id="mDesc"></div>
+        <div class="day-rows" id="mDays"></div>
+        <div class="modal-btns" id="mBtns"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hdr">
+    <div class="logo">Spend<em>Smart</em></div>
+    <div class="icon-btn" onclick="toggleNotif()" id="notifBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <div class="ndot" id="ndot" style="display:none"></div>
+    </div>
+  </div>
+  <div class="dateline" id="dateline"></div>
+
+  <div class="install-bar" id="installBar" onclick="showInstall()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+    <div class="ib-text"><div class="ib-title">Add to iPhone Home Screen</div><div class="ib-sub">Safari → Share → Add to Home Screen</div></div>
+    <div class="ib-x" onclick="event.stopPropagation();this.closest('.install-bar').style.display='none'">✕</div>
+  </div>
+
+  <div class="cards-row">
+    <div class="bal-card chase" id="chaseCard" onclick="openChaseModal()">
+      <div class="bc-top"><div class="bc-brand chase">Chase</div><div class="bc-pill" id="chasePill">—</div></div>
+      <div class="bc-sub">Checking balance</div>
+      <div class="bc-val" id="chaseVal">—</div>
+      <div class="bc-foot" id="chaseFoot">Tap to update</div>
+    </div>
+    <div class="bal-card disc">
+      <div class="bc-top"><div class="bc-brand disc">Discover</div><div class="bc-pill ok">Auto</div></div>
+      <div class="bc-sub">Spent this month</div>
+      <div class="bc-val" id="discVal">$0.00</div>
+      <div class="bc-foot" id="discFoot">0 transactions</div>
+    </div>
+  </div>
+
+  <div class="net-section">
+    <div class="net-header">
+      <div class="net-title">Net balance</div>
+      <div style="font-size:11px;color:var(--t3)">Chase − Discover</div>
+    </div>
+    <div class="net-big" id="netBig">$—</div>
+    <div class="net-row">
+      <div class="net-item"><div class="net-item-label">Chase</div><div class="net-item-val" id="netChase" style="color:var(--chase)">$—</div></div>
+      <div class="net-arrow">→</div>
+      <div class="net-item" style="align-items:center"><div class="net-item-label">Discover spent</div><div class="net-item-val" id="netDisc" style="color:var(--disc)">$0</div></div>
+      <div class="net-arrow">→</div>
+      <div class="net-item" style="align-items:flex-end"><div class="net-item-label">Remaining</div><div class="net-item-val" id="netRem" style="color:var(--green)">$—</div></div>
+    </div>
+    <div class="net-bar-wrap">
+      <div class="net-bar-labels"><span>0%</span><span id="netBarPct">—</span></div>
+      <div class="net-bar-track"><div class="net-bar-fill" id="netBarFill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="prog-wrap">
+    <div class="prog-row"><span>Monthly budget</span><span id="progLbl">—</span></div>
+    <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('overview',this)">Overview</button>
+    <button class="tab" onclick="switchTab('transactions',this)">Transactions</button>
+    <button class="tab" onclick="switchTab('insights',this)">Insights</button>
+  </div>
+
+  <div id="panel-overview" class="panel active">
+    <div class="sec">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-lbl">Daily avg</div><div class="stat-val" id="sAvg">$0</div><div class="stat-sub">this month</div></div>
+        <div class="stat-card"><div class="stat-lbl">Total spent</div><div class="stat-val" id="sTotal">$0</div><div class="stat-sub" id="sTxnCt">0 transactions</div></div>
+      </div>
+      <div class="mnav">
+        <button class="mnav-btn" onclick="changeMonth(-1)">‹</button>
+        <div class="mnav-lbl" id="mnLbl"></div>
+        <button class="mnav-btn" onclick="changeMonth(1)">›</button>
+      </div>
+      <div class="cc"><div class="cc-lbl">Daily spending — Discover</div><div style="position:relative;height:155px"><canvas id="lineChart" role="img" aria-label="Daily spending line chart"></canvas></div></div>
+      <div class="cc"><div class="cc-lbl">Spending by category</div><div class="cat-leg" id="catLeg"></div><div style="position:relative;height:155px"><canvas id="doughChart" role="img" aria-label="Category donut chart"></canvas></div></div>
+      <div class="cc"><div class="cc-lbl">Chase balance vs Discover spend</div><div style="position:relative;height:130px"><canvas id="barChart" role="img" aria-label="Chase vs Discover bar chart"></canvas></div></div>
+    </div>
+  </div>
+
+  <div id="panel-transactions" class="panel">
+    <div class="sec">
+      <div style="background:var(--disc-dim);border:0.5px solid var(--disc-border);border-radius:var(--r12);padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--t2);line-height:1.5">
+        Log every <strong style="color:var(--disc)">Discover</strong> charge here. Your net balance updates automatically.
+      </div>
+      <div class="add-form" id="addForm">
+        <div class="f-row"><label class="f-lbl">Description</label><input class="f-in" type="text" id="fName" placeholder="e.g. Whole Foods"/></div>
+        <div class="f-row"><label class="f-lbl">Amount ($)</label><input class="f-in" type="number" id="fAmt" placeholder="0.00" step="0.01" min="0" inputmode="decimal"/></div>
+        <div class="f-row">
+          <label class="f-lbl">Category</label>
+          <select class="f-sel" id="fCat">
+            <option value="Food">Food</option>
+            <option value="Transport">Transport</option>
+            <option value="Shopping">Shopping</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="Health">Health</option>
+            <option value="Bills">Bills</option>
+            <option value="Nefarious">Nefarious</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="f-acts">
+          <button class="f-save" onclick="saveTxn()">Save charge</button>
+          <button class="f-cancel" onclick="closeForm()">Cancel</button>
+        </div>
+      </div>
+      <button class="add-btn" onclick="openForm()">+ Add Discover charge</button>
+      <div class="txn-list" id="txnList"></div>
+    </div>
+  </div>
+
+  <div id="panel-insights" class="panel">
+    <div class="sec">
+      <div class="sec-lbl">Smart insights</div>
+      <div id="insightsList"></div>
+
+      <div class="sec-lbl" style="margin-top:16px">Notifications</div>
+      <div class="srow">
+        <div class="ins-dot-wrap" style="background:var(--accent-dim)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </div>
+        <div class="sr-body"><div class="sr-title">10 PM daily reminder</div><div class="sr-sub" id="notifSub">Tap to enable</div></div>
+        <div class="toggle" id="notifToggle" onclick="toggleNotif()"></div>
+      </div>
+
+      <div class="sec-lbl" style="margin-top:16px">Budget</div>
+      <div class="srow">
+        <div class="sr-body">
+          <div class="sr-title">Monthly Discover limit</div>
+          <div class="bud-row"><span class="bud-sym">$</span><input class="bud-in" type="number" id="budgetInput" placeholder="2000" inputmode="decimal"/><button class="bud-save" onclick="saveBudget()">Save</button></div>
+        </div>
+      </div>
+
+      <div class="sec-lbl" style="margin-top:16px">6-month trend</div>
+      <div class="cc"><div style="position:relative;height:140px"><canvas id="trendChart" role="img" aria-label="6 month spending trend"></canvas></div></div>
+
+      <div class="sec-lbl" style="margin-top:16px">Data</div>
+      <div class="srow" style="cursor:pointer" onclick="clearData()">
+        <div class="ins-dot-wrap" style="background:rgba(255,92,92,0.1)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </div>
+        <div class="sr-body"><div class="sr-title" style="color:var(--red)">Clear all data</div><div class="sr-sub">Wipe transactions and balances</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:40px"></div>
+</div>
+
+<script>
+const CAT_COLORS={Food:'#7C6FFF',Transport:'#3DD68C',Shopping:'#F59E0B',Entertainment:'#F472B6',Health:'#38BDF8',Bills:'#FF5C5C',Nefarious:'#C026D3',Other:'#6B7280'};
+const CAT_ICONS={Food:'🍔',Transport:'🚗',Shopping:'🛍',Entertainment:'🎬',Health:'💊',Bills:'⚡',Nefarious:'😈',Other:'📦'};
+const MO=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MOS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function todayStr(){return new Date().toISOString().split('T')[0]}
+function dAgo(n){const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().split('T')[0]}
+function fmtDate(s){return new Date(s+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+function fmt(n){return '$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
+
+let st=JSON.parse(localStorage.getItem('ss4')||'null')||{txns:[],budget:2000,notifEnabled:false,chaseLog:{},curMonth:new Date().getMonth(),curYear:new Date().getFullYear()};
+let nxtId=st.txns.length?Math.max(...st.txns.map(t=>t.id))+1:1;
+let lC,dC,bC,tC,reminderTimer=null;
+function save(){localStorage.setItem('ss4',JSON.stringify(st))}
+
+function missingDays(log){
+  const today=todayStr();
+  const keys=Object.keys(log).sort();
+  const last=keys.length?keys[keys.length-1]:null;
+  if(!last)return[today];
+  if(last===today)return[];
+  const out=[];
+  const lDate=new Date(last+'T12:00:00');
+  const diff=Math.round((new Date(today+'T12:00:00')-lDate)/86400000);
+  for(let i=1;i<=diff;i++){const d=new Date(lDate);d.setDate(d.getDate()+i);out.push(d.toISOString().split('T')[0])}
+  return out;
+}
+
+function openChaseModal(){
+  const missing=missingDays(st.chaseLog);
+  const today=todayStr();
+  if(missing.length===0){
+    const cur=Number(st.chaseLog[today]||0).toFixed(2);
+    document.getElementById('mIcon').innerHTML=`<div style="width:48px;height:48px;border-radius:16px;background:var(--chase-dim);display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--chase)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>`;
+    document.getElementById('mTitle').textContent='Chase is up to date';
+    document.getElementById('mDesc').innerHTML='Last updated <strong>today</strong> at $'+cur+'. Correct below if needed.';
+    document.getElementById('mDays').innerHTML=dayRowHTML(today,0,cur,true);
+    document.getElementById('mBtns').innerHTML='<button class="mbtn primary-chase" onclick="submitChase(true)">Update balance</button><button class="mbtn ghost" onclick="closeModal()">Done</button>';
+  } else {
+    const n=missing.length;
+    document.getElementById('mIcon').innerHTML=`<div style="width:48px;height:48px;border-radius:16px;background:var(--chase-dim);display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--chase)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>`;
+    document.getElementById('mTitle').textContent='Update Chase balance';
+    document.getElementById('mDesc').innerHTML='No entry for <strong>'+(n===1?'today':n+' days')+'</strong>. Enter your checking balance for each day.';
+    document.getElementById('mDays').innerHTML=missing.map((d,i)=>dayRowHTML(d,i,'',false)).join('');
+    document.getElementById('mBtns').innerHTML='<button class="mbtn primary-chase" onclick="submitChase(false)">Save '+n+' '+(n===1?'entry':'entries')+'</button>';
+  }
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function dayRowHTML(date,idx,placeholder,isCorrection){
+  const label=date===todayStr()?'Today':date===dAgo(1)?'Yesterday':'';
+  const id=isCorrection?'minp-today':'minp-'+idx;
+  return'<div class="day-row"><div class="dr-label"><div class="dr-date">'+(label?label+' — ':'')+fmtDate(date)+'</div><div class="dr-hint">Checking account balance</div></div><div class="dr-input-wrap"><span class="dr-sym">$</span><input class="dr-inp" type="number" id="'+id+'" placeholder="'+(placeholder||'0.00')+'" step="0.01" min="0" inputmode="decimal"/></div></div>';
+}
+
+function submitChase(isCorrection){
+  const missing=isCorrection?[todayStr()]:missingDays(st.chaseLog);
+  missing.forEach((d,i)=>{
+    const id=isCorrection?'minp-today':'minp-'+i;
+    const v=parseFloat(document.getElementById(id)?.value);
+    if(!isNaN(v)&&v>=0)st.chaseLog[d]=v;
+  });
+  save();closeModal();updateAll();
+}
+function closeModal(){document.getElementById('modalOverlay').classList.add('hidden')}
+
+function getMonthTxns(){
+  return st.txns.filter(t=>{const d=new Date(t.date+'T12:00:00');return d.getMonth()===st.curMonth&&d.getFullYear()===st.curYear});
+}
+
+function updateAll(){
+  const now=new Date();
+  const today=todayStr();
+  document.getElementById('dateline').textContent=now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}).toUpperCase();
+  document.getElementById('mnLbl').textContent=MO[st.curMonth]+' '+st.curYear;
+  document.getElementById('budgetInput').value=st.budget||2000;
+
+  const txns=getMonthTxns();
+  const discSpent=txns.reduce((s,t)=>s+Number(t.amt),0);
+  const missing=missingDays(st.chaseLog);
+  const chaseToday=st.chaseLog[today];
+
+  const cCard=document.getElementById('chaseCard'),cPill=document.getElementById('chasePill'),cVal=document.getElementById('chaseVal'),cFoot=document.getElementById('chaseFoot');
+  if(missing.length===0&&chaseToday!==undefined){
+    cCard.className='bal-card chase';cPill.className='bc-pill ok';cPill.textContent='Updated';
+    cVal.className='bc-val';cVal.textContent=fmt(chaseToday);cFoot.textContent='Tap to update';
+  } else {
+    cCard.className='bal-card chase stale';const n=missing.length;
+    cPill.className='bc-pill '+(n>2?'bad':'warn');cPill.textContent=n===1?'Today missing':n+' days missing';
+    cVal.className='bc-val empty';cVal.textContent='Tap to enter balance';cFoot.textContent='Required — tap to update';
+  }
+
+  document.getElementById('discVal').textContent=fmt(discSpent);
+  document.getElementById('discFoot').textContent=txns.length+' transaction'+(txns.length!==1?'s':'');
+
+  const netBig=document.getElementById('netBig'),netRem=document.getElementById('netRem'),netBarFill=document.getElementById('netBarFill'),netBarPct=document.getElementById('netBarPct');
+  document.getElementById('netDisc').textContent=fmt(discSpent);
+  if(chaseToday!==undefined){
+    const net=Number(chaseToday)-discSpent;
+    document.getElementById('netChase').textContent=fmt(chaseToday);
+    netBig.textContent=(net<0?'-':'')+'$'+Math.abs(net).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    netBig.className='net-big '+(net>0?'positive':net<0?'negative':'neutral');
+    netRem.textContent=net>=0?fmt(net):'-'+fmt(Math.abs(net));
+    netRem.style.color=net>=0?'var(--green)':'var(--red)';
+    if(Number(chaseToday)>0){
+      const pct=Math.min(100,Math.round(discSpent/Number(chaseToday)*100));
+      netBarFill.style.width=pct+'%';
+      netBarFill.className='net-bar-fill'+(pct>85?' danger':pct>65?' warning':'');
+      netBarPct.textContent=pct+'% of balance used';
+    } else {netBarFill.style.width='0%';netBarPct.textContent='—'}
+  } else {
+    document.getElementById('netChase').textContent='$—';
+    netBig.textContent='$—';netBig.className='net-big neutral';netRem.textContent='$—';
+    netBarFill.style.width='0%';netBarPct.textContent='Enter Chase balance';
+  }
+
+  const budget=st.budget||2000;
+  const pct=Math.min(100,Math.round(discSpent/budget*100));
+  document.getElementById('progFill').style.width=pct+'%';
+  document.getElementById('progFill').style.background=pct>85?'var(--red)':pct>65?'var(--amber)':'var(--accent)';
+  document.getElementById('progLbl').textContent=pct+'% of $'+budget.toLocaleString();
+
+  const days=txns.length?[...new Set(txns.map(t=>t.date))].length:1;
+  document.getElementById('sAvg').textContent='$'+Math.round(discSpent/days);
+  document.getElementById('sTotal').textContent=fmt(discSpent);
+  document.getElementById('sTxnCt').textContent=txns.length+' transaction'+(txns.length!==1?'s':'');
+
+  updateCharts(txns,discSpent,chaseToday);
+  renderTxns(txns);
+  updateInsights(txns,discSpent,budget,chaseToday);
+  updateNotifUI();
+}
+
+function updateCharts(txns,discSpent,chaseToday){
+  const now=new Date();
+  const isNow=st.curMonth===now.getMonth()&&st.curYear===now.getFullYear();
+  const dim=new Date(st.curYear,st.curMonth+1,0).getDate();
+  const show=isNow?now.getDate():dim;
+  const daily=Array(show).fill(0);
+  txns.forEach(t=>{const d=new Date(t.date+'T12:00:00').getDate();if(d>=1&&d<=show)daily[d-1]+=Number(t.amt)});
+  const labels=Array.from({length:show},(_,i)=>i+1);
+
+  if(lC)lC.destroy();
+  lC=new Chart(document.getElementById('lineChart').getContext('2d'),{type:'line',data:{labels,datasets:[{data:daily.map(v=>parseFloat(v.toFixed(2))),borderColor:'#FF6B35',backgroundColor:'rgba(255,107,53,0.07)',borderWidth:1.5,pointRadius:2,pointBackgroundColor:'#FF6B35',fill:true,tension:0.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4E4D6A',font:{size:10},maxTicksLimit:8}},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4E4D6A',font:{size:10},callback:v=>'$'+v}}}}});
+
+  const catMap={};txns.forEach(t=>{catMap[t.cat]=(catMap[t.cat]||0)+Number(t.amt)});
+  const cats=Object.keys(catMap),vals=cats.map(c=>parseFloat(catMap[c].toFixed(2))),cols=cats.map(c=>CAT_COLORS[c]||'#888');
+  if(dC)dC.destroy();
+  dC=new Chart(document.getElementById('doughChart').getContext('2d'),{type:'doughnut',data:{labels:cats,datasets:[{data:vals,backgroundColor:cols,borderWidth:2,borderColor:'#08080D',hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.label+': $'+ctx.parsed.toFixed(2)}}}}});
+  document.getElementById('catLeg').innerHTML=cats.map((c,i)=>'<div class="cat-pill-leg"><div class="cat-dot" style="background:'+cols[i]+'"></div>'+c+' $'+vals[i].toFixed(0)+'</div>').join('');
+
+  if(bC)bC.destroy();
+  bC=new Chart(document.getElementById('barChart').getContext('2d'),{type:'bar',data:{labels:['Chase balance','Discover spent'],datasets:[{data:[chaseToday!==undefined?parseFloat(Number(chaseToday).toFixed(2)):0,parseFloat(discSpent.toFixed(2))],backgroundColor:['rgba(46,139,240,0.7)','rgba(255,107,53,0.7)'],borderRadius:8,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#8F8EB0',font:{size:11}}},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4E4D6A',font:{size:10},callback:v=>'$'+v}}}}});
+
+  if(tC)tC.destroy();
+  const tl=[],tv=[];
+  for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);tl.push(MOS[d.getMonth()]);const amt=st.txns.filter(t=>{const dt=new Date(t.date+'T12:00:00');return dt.getMonth()===d.getMonth()&&dt.getFullYear()===d.getFullYear()}).reduce((s,t)=>s+Number(t.amt),0);tv.push(parseFloat(amt.toFixed(2)))}
+  tC=new Chart(document.getElementById('trendChart').getContext('2d'),{type:'bar',data:{labels:tl,datasets:[{data:tv,backgroundColor:'rgba(255,107,53,0.65)',borderRadius:6,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#8F8EB0',font:{size:11}}},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4E4D6A',font:{size:10},callback:v=>'$'+v}}}}});
+}
+
+function renderTxns(txns){
+  const sorted=txns.slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
+  document.getElementById('txnList').innerHTML=sorted.length?sorted.map(t=>'<div class="txn"><div class="txn-ico" style="background:'+(CAT_COLORS[t.cat]||'#888')+'1a">'+(CAT_ICONS[t.cat]||'📦')+'</div><div class="txn-body"><div class="txn-name">'+t.name+'</div><div class="txn-meta"><span class="chip disc">Discover</span><span>'+t.cat+'</span><span>'+fmtDate(t.date)+'</span></div></div><div class="txn-r"><div class="txn-amt">-$'+Number(t.amt).toFixed(2)+'</div><div class="txn-del" onclick="delTxn('+t.id+')">remove</div></div></div>').join(''):'<div style="text-align:center;color:var(--t3);padding:32px 0;font-size:13px">No Discover charges this month</div>';
+}
+
+function updateInsights(txns,discSpent,budget,chaseToday){
+  const ins=[];
+  const pct=discSpent/budget*100;
+  if(pct>90)ins.push({c:'rgba(255,92,92,0.1)',d:'#FF5C5C',t:'Discover at <strong>'+pct.toFixed(0)+'%</strong> of budget — only <strong>$'+(budget-discSpent).toFixed(2)+'</strong> left.'});
+  else if(pct>65)ins.push({c:'rgba(245,158,11,0.1)',d:'#F59E0B',t:'<strong>'+pct.toFixed(0)+'%</strong> of Discover budget used. Watch your pace.'});
+  else ins.push({c:'var(--green-dim)',d:'#3DD68C',t:'Discover spending on track — <strong>$'+(budget-discSpent).toFixed(2)+'</strong> of budget remaining.'});
+
+  if(chaseToday!==undefined){
+    const net=Number(chaseToday)-discSpent;
+    if(net<0)ins.push({c:'rgba(255,92,92,0.1)',d:'#FF5C5C',t:'Net balance is <strong style="color:var(--red)">-'+fmt(Math.abs(net))+'</strong> — Discover charges exceed Chase balance.'});
+    else if(net<500)ins.push({c:'rgba(245,158,11,0.1)',d:'#F59E0B',t:'Net balance is <strong>'+fmt(net)+'</strong> — getting low after Discover charges.'});
+    else ins.push({c:'var(--chase-dim)',d:'#2E8BF0',t:'Chase covers all Discover charges with <strong>'+fmt(net)+'</strong> remaining.'});
+  } else {
+    ins.push({c:'var(--chase-dim)',d:'#2E8BF0',t:'Update your <strong>Chase balance</strong> to calculate your true net balance.'});
+  }
+
+  const nefTxns=txns.filter(t=>t.cat==='Nefarious');
+  if(nefTxns.length>0){
+    const nefTotal=nefTxns.reduce((s,t)=>s+Number(t.amt),0);
+    ins.push({c:'rgba(192,38,211,0.1)',d:'#C026D3',t:'<strong>'+nefTxns.length+' nefarious charge'+(nefTxns.length>1?'s':'')+'</strong> totaling <strong>$'+nefTotal.toFixed(2)+'</strong> this month. No judgment.'});
+  }
+
+  const catMap={};txns.forEach(t=>{catMap[t.cat]=(catMap[t.cat]||0)+Number(t.amt)});
+  const top=Object.entries(catMap).sort((a,b)=>b[1]-a[1])[0];
+  if(top&&discSpent>0)ins.push({c:(CAT_COLORS[top[0]]||'#888')+'1a',d:CAT_COLORS[top[0]]||'#888',t:'Top category: <strong>'+top[0]+'</strong> at <strong>$'+top[1].toFixed(2)+'</strong> ('+Math.round(top[1]/discSpent*100)+'% of spending).'});
+
+  document.getElementById('insightsList').innerHTML=ins.map(i=>'<div class="insight"><div class="ins-dot-wrap" style="background:'+i.c+'"><div style="width:9px;height:9px;border-radius:50%;background:'+i.d+'"></div></div><div class="ins-body">'+i.t+'</div></div>').join('');
+}
+
+function updateNotifUI(){
+  const on=st.notifEnabled;
+  document.getElementById('ndot').style.display=on?'block':'none';
+  document.getElementById('notifToggle').className='toggle'+(on?' on':'');
+  document.getElementById('notifSub').textContent=on?'Reminder set for 10:00 PM':'Tap to enable';
+}
+
+function toggleNotif(){
+  if(st.notifEnabled){st.notifEnabled=false;save();updateNotifUI();if(reminderTimer){clearInterval(reminderTimer);reminderTimer=null}}
+  else if('Notification' in window){
+    Notification.requestPermission().then(p=>{
+      if(p==='granted'){st.notifEnabled=true;save();updateNotifUI();scheduleReminder();new Notification('SpendSmart',{body:'10 PM daily reminders enabled.'})}
+      else alert('Enable notifications in Settings → Safari → Notifications, then try again.');
+    });
+  }
+}
+
+function scheduleReminder(){
+  if(reminderTimer)clearInterval(reminderTimer);
+  reminderTimer=setInterval(()=>{
+    if(!st.notifEnabled)return;
+    const n=new Date();
+    if(n.getHours()===22&&n.getMinutes()===0&&Notification.permission==='granted'){
+      const txns=getMonthTxns().filter(t=>t.date===todayStr());
+      const ttl=txns.reduce((s,t)=>s+Number(t.amt),0);
+      new Notification('SpendSmart',{body:txns.length?'Today\'s Discover: $'+ttl.toFixed(2)+' across '+txns.length+' charge'+(txns.length>1?'s':'')+'.':"Log today's Discover charges and update your Chase balance."});
+    }
+  },60000);
+}
+
+function openForm(){document.getElementById('addForm').classList.add('open')}
+function closeForm(){document.getElementById('addForm').classList.remove('open')}
+function saveTxn(){
+  const name=document.getElementById('fName').value.trim();
+  const amt=parseFloat(document.getElementById('fAmt').value);
+  const cat=document.getElementById('fCat').value;
+  if(!name||isNaN(amt)||amt<=0)return;
+  st.txns.push({id:nxtId++,name,amt,card:'Discover',cat,date:todayStr()});
+  save();closeForm();
+  document.getElementById('fName').value='';document.getElementById('fAmt').value='';
+  updateAll();
+}
+function delTxn(id){st.txns=st.txns.filter(t=>t.id!==id);save();updateAll()}
+function changeMonth(d){st.curMonth+=d;if(st.curMonth>11){st.curMonth=0;st.curYear++}if(st.curMonth<0){st.curMonth=11;st.curYear--}save();updateAll()}
+function switchTab(p,btn){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.getElementById('panel-'+p).classList.add('active')}
+function saveBudget(){const v=parseFloat(document.getElementById('budgetInput').value);if(!isNaN(v)&&v>0){st.budget=v;save();updateAll()}}
+function clearData(){if(confirm('Clear all transactions and balance history? This cannot be undone.')){st.txns=[];st.chaseLog={};save();updateAll()}}
+function showInstall(){alert('Install SpendSmart on iPhone:\n\n1. Open this URL in Safari\n2. Tap the Share button (↑) at the bottom\n3. Tap "Add to Home Screen"\n4. Tap "Add"')}
+
+if(window.navigator.standalone)document.getElementById('installBar').style.display='none';
+if(st.notifEnabled)scheduleReminder();
+updateAll();
+setTimeout(()=>{if(missingDays(st.chaseLog).length>0)openChaseModal()},500);
+</script>
+</body>
+</html>
